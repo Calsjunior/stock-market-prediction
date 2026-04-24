@@ -1,43 +1,65 @@
-# src/features.py
+"""Feature engineering for the stock market prediction project."""
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+
 import pandas as pd
 
-def add_target(df):
-    """
-    Creates the target variable for classification.
-    Target = 1 if tomorrow's close > today's close, else 0.
-    """
-    # Shift the Close column backwards by 1 to get tomorrow's price
-    df["Tomorrow"] = df["Close"].shift(-1)
-    
-    # Create the binary target
-    df["Target"] = (df["Tomorrow"] > df["Close"]).astype(int)
-    
-    return df
 
-def add_rolling_features(df, horizons=[2, 5, 60, 250, 1000]):
+BASE_PREDICTORS = ["Close", "Volume", "Open", "High", "Low"]
+DEFAULT_HORIZONS = [2, 5, 60, 250, 1000]
+
+
+def add_target(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Calculates rolling averages and trends for different time horizons.
-    horizons represent days: 2 (couple days), 5 (week), 60 (quarter), 
-    250 (year), 1000 (four years).
+    Create the classification target.
+
+    Target is 1 when tomorrow's closing price is higher than today's close,
+    otherwise it is 0.
     """
-    new_predictors = []
-    
+    data = df.copy()
+    data["Tomorrow"] = data["Close"].shift(-1)
+    data["Target"] = (data["Tomorrow"] > data["Close"]).astype(int)
+    return data
+
+
+def add_rolling_features(
+    df: pd.DataFrame,
+    horizons: Iterable[int] = DEFAULT_HORIZONS,
+) -> tuple[pd.DataFrame, list[str]]:
+    """
+    Add rolling price ratio and trend features for each horizon.
+
+    ``Close_Ratio_N`` compares today's close to the N-day rolling average.
+    ``Trend_N`` counts how many of the previous N trading days went up.
+    """
+    data = df.copy()
+    new_predictors: list[str] = []
+
     for horizon in horizons:
-        # Calculate the rolling average for the given horizon
-        rolling_averages = df["Close"].rolling(window=horizon).mean()
-        
-        # Feature 1: Ratio between today's close and the rolling average
+        rolling_averages = data["Close"].rolling(window=horizon).mean()
+
         ratio_column = f"Close_Ratio_{horizon}"
-        df[ratio_column] = df["Close"] / rolling_averages
-        
-        # Feature 2: Trend (how many days in the past 'horizon' the stock went up)
+        data[ratio_column] = data["Close"] / rolling_averages
+
         trend_column = f"Trend_{horizon}"
-        df[trend_column] = df.shift(1).rolling(window=horizon).sum()["Target"]
-        
-        new_predictors += [ratio_column, trend_column]
-        
-    # Drop rows with NaN values created by the rolling windows
-    # We exclude "Tomorrow" from the dropna check so we can still predict the current day
-    df = df.dropna(subset=df.columns[df.columns != "Tomorrow"])
-    
-    return df, new_predictors
+        data[trend_column] = data["Target"].shift(1).rolling(window=horizon).sum()
+
+        new_predictors.extend([ratio_column, trend_column])
+
+    data = data.dropna(subset=data.columns[data.columns != "Tomorrow"])
+    return data, new_predictors
+
+
+def build_feature_dataset(
+    df: pd.DataFrame,
+    start_date: str = "1990-01-01",
+    horizons: Iterable[int] = DEFAULT_HORIZONS,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Build the final modeling table used for training and prediction."""
+    data = df.loc[start_date:].copy()
+    data = add_target(data)
+    data, predictors = add_rolling_features(data, horizons=horizons)
+    return data, predictors
+
