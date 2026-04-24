@@ -1,4 +1,3 @@
-# src/train.py
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score
