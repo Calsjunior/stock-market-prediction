@@ -88,8 +88,9 @@ def train_pipeline(args: argparse.Namespace) -> tuple[dict, Path]:
     metrics: dict = {}
     if not getattr(args, "skip_backtest", False):
         model_for_backtest = create_model()
+        backtest_data = feature_data.dropna(subset=["Tomorrow"]).copy()
         predictions = backtest(
-            data=feature_data,
+            data=backtest_data,
             model=model_for_backtest,
             predictors=predictors,
             start=args.backtest_start,
