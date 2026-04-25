@@ -79,15 +79,23 @@ def backtest(
 
 
 def evaluate_predictions(predictions: pd.DataFrame) -> dict[str, Any]:
-    """Return simple metrics used by the notebook."""
+    """Return model metrics and a simple baseline comparison."""
+
+    model_precision = precision_score(
+        predictions["Target"],
+        predictions["Predictions"],
+        zero_division=0,
+    )
+
+    # Baseline: always predict the market goes up tomorrow.
+    baseline_precision = predictions["Target"].mean()
+
     return {
-        "precision": precision_score(
-            predictions["Target"],
-            predictions["Predictions"],
-            zero_division=0,
-        ),
+        "model_precision": model_precision,
+        "baseline_always_up_precision": baseline_precision,
+        "improvement_over_baseline": model_precision - baseline_precision,
         "prediction_counts": predictions["Predictions"].value_counts().to_dict(),
-        "target_distribution": (predictions["Target"].value_counts(normalize=True).sort_index().to_dict()),
+        "target_distribution": predictions["Target"].value_counts(normalize=True).sort_index().to_dict(),
     }
 
 
