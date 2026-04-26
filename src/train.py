@@ -7,6 +7,7 @@ from typing import Any
 
 import joblib
 import pandas as pd
+from sklearn.base import clone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score
 
@@ -24,6 +25,7 @@ def create_model(
         n_estimators=n_estimators,
         min_samples_split=min_samples_split,
         random_state=random_state,
+        n_jobs=1,
     )
 
 
@@ -59,8 +61,13 @@ def backtest(
 ) -> pd.DataFrame:
     """Backtest the model by retraining on expanding historical windows."""
     all_predictions: list[pd.DataFrame] = []
+    total_rows = data.shape[0]
 
-    for i in range(start, data.shape[0], step):
+    print(f"\nStarting backtest on {total_rows} rows. This may take a few minutes...")
+
+    for i in range(start, total_rows, step):
+        print(f" Training fold: {i} / {total_rows}...")
+
         train = data.iloc[:i].copy()
         test = data.iloc[i : i + step].copy()
         predictions = predict_single_step(
