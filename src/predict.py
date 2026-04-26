@@ -23,6 +23,14 @@ def predict_latest(
     start_date = metadata.get("start_date", "1990-01-01")
     features, _ = build_feature_dataset(data, start_date=start_date, horizons=horizons)
 
+    if features.empty:
+        max_horizon = max(horizons) if horizons else 0
+        raise ValueError(f"Not enough historical data to calculate rolling features (max horizon: {max_horizon} days.")
+
+    missing = set(predictors) - set(features.columns)
+    if missing:
+        raise ValueError(f"Feature mismatch - missing columns required by model: {missing}")
+
     latest_row = features.iloc[[-1]]
     probability = float(model.predict_proba(latest_row[predictors])[:, 1][0])
     prediction = int(probability >= threshold)
