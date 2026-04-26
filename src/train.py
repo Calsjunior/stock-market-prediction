@@ -74,7 +74,7 @@ def backtest(
             train=train,
             test=test,
             predictors=predictors,
-            model=model,
+            model=clone(model),
             threshold=threshold,
         )
         all_predictions.append(predictions)
