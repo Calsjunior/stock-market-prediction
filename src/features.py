@@ -36,6 +36,7 @@ def add_rolling_features(
     """
     data = df.copy()
     new_predictors: list[str] = []
+    new_columns = {}
 
     for horizon in horizons:
         rolling_averages = data["Close"].rolling(window=horizon).mean()
@@ -48,6 +49,10 @@ def add_rolling_features(
 
         new_predictors.extend([ratio_column, trend_column])
 
+    new_features_df = pd.DataFrame(new_columns, index=data.index)
+    data = pd.concat([data, new_features_df], axis=1)
+
+    cols_to_check = [c for c in data.columns if c != "Tomorrow"]
     data = data.dropna(subset=data.columns[data.columns != "Tomorrow"])
     return data, new_predictors
 
@@ -62,4 +67,3 @@ def build_feature_dataset(
     data = add_target(data)
     data, predictors = add_rolling_features(data, horizons=horizons)
     return data, predictors
-
