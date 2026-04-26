@@ -53,7 +53,7 @@ def add_rolling_features(
     data = pd.concat([data, new_features_df], axis=1)
 
     cols_to_check = [c for c in data.columns if c != "Tomorrow"]
-    data = data.dropna(subset=data.columns[data.columns != "Tomorrow"])
+    data = data.dropna(cols_to_check)
     return data, new_predictors
 
 
