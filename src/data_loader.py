@@ -7,10 +7,11 @@ from pathlib import Path
 import pandas as pd
 
 
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_TICKER = "^GSPC"
-DEFAULT_DATA_DIR = Path("data")
+DEFAULT_DATA_DIR = _PROJECT_ROOT / "data"
 DEFAULT_DATA_PATH = DEFAULT_DATA_DIR / "sp500.csv"
-LEGACY_DATA_PATH = Path("sp500.csv")
+LEGACY_DATA_PATH = _PROJECT_ROOT / "sp500.csv"
 DROP_COLUMNS = ("Dividends", "Stock Splits")
 
 
